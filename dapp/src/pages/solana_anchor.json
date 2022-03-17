@@ -192,6 +192,14 @@
           "type": "publicKey"
         },
         {
+          "name": "poolPercent1",
+          "type": "u8"
+        },
+        {
+          "name": "poolPercent2",
+          "type": "u8"
+        },
+        {
           "name": "mintingPrice",
           "type": "u64"
         }

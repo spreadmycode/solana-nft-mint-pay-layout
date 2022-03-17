@@ -32,7 +32,7 @@ log.setLevel('info');
 // const axios = require('axios');
 const { metadata: { Metadata } } = programs
 var FormData = require('form-data');
-const programId = new PublicKey('3ToAQ1RCxtCCVPj3BGFS2HSm3Hi4xMJWowycHAAsAMgJ')
+const programId = new PublicKey('J7NPSyNf61AFrgTktvt87LqJHqwes5axQEH1pwjRaVcP')
 const TOKEN_METADATA_PROGRAM_ID = new PublicKey("metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s")
 const idl = JSON.parse(fs.readFileSync('src/solana_anchor.json','utf8'))
 
