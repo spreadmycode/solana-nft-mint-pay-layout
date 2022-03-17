@@ -361,7 +361,6 @@ pub struct UpdateConfig<'info>{
 }
 
 #[derive(Accounts)]
-#[instruction(_bump : u8)]
 pub struct Mint<'info>{
     #[account(mut, signer)]
     owner : AccountInfo<'info>,
@@ -437,16 +436,6 @@ pub struct InitConfig<'info>{
 
     #[account(mut, constraint= config.to_account_info().owner==program_id && config.to_account_info().data_len() >= CONFIG_SIZE+(4+CONFIG_LINE_SIZE * _max_number_of_lines as usize))]
     config : AccountInfo<'info>,
-}
-
-pub const METADATA_EXTENDED_SIZE : usize = 32 + 32 + 4 + 4 + 1;
-#[account]
-pub struct MetadataExtended{
-    pub mint : Pubkey,
-    pub parent : Pubkey,
-    pub children_count : u32,
-    pub number : u32,
-    pub bump : u8,
 }
 
 pub const POOL_SIZE : usize = 32 + 32 + 32 + 4 + 8 + 32 + 32 + 32 + 1 + 1 + 1;
@@ -570,9 +559,6 @@ pub enum PoolError {
 
     #[msg("Invalid oldest mint requirement")]
     InvalidOldestMintRequirement,
-
-    #[msg("Invalid oldest metadata_extended")]
-    InvalidOldestMetadataExtended,
 
     #[msg("Invalid parent")]
     InvalidParent,
