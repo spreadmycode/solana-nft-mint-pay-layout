@@ -60,8 +60,8 @@ const {
 const TOKEN_METADATA_PROGRAM_ID = new anchor.web3.PublicKey(
   "metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s"
 );
-const programId = new PublicKey("Ah2FHrgj7yNxvriY8CCXq7KYnKAHUHwHCzre2LzNTxzc");
-const POOL = new PublicKey("5x8sonhCihHBKqT5p3mP2wJeXVTtYzLNLLMtvn613L4C");
+const programId = new PublicKey("6xygZK6rUgtixEFf8CKRzVe2HWxeyWKxGvWBDERYo2Zp");
+const POOL = new PublicKey("CeLVMp9JzL7xoJRZ8eKYUv1Dxe8pQ241qb2GGqLfUWsX");
 const idl = require("./solana_anchor.json");
 const confirmOption: ConfirmOptions = {
   commitment: "finalized",
@@ -86,7 +86,6 @@ export default function Mint() {
     severity: undefined,
   });
   const [isProcessing, setIsProcessing] = useState(false);
-  const [holdingNfts, setHoldingNfts] = useState<any[]>([]);
   const [poolData, setPoolData] = useState<any>(null);
 
   useEffect(() => {
@@ -146,6 +145,7 @@ export default function Mint() {
       const provider = new anchor.Provider(conn, wallet as any, confirmOption);
       const program = new anchor.Program(idl, programId, provider);
       const poolData = await program.account.pool.fetch(pool);
+      console.log(poolData);
 
       let transaction = new Transaction();
       let instructions: TransactionInstruction[] = [];

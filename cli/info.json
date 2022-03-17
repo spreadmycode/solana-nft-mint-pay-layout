@@ -1,12 +1,12 @@
 {
 	"maxNumberOfLines" : 10,
-	"symbol" : "TestPayout",
-	"creator" : "CzCCZkzxGRaic54jmaMezmLxSudyQPTfRKvkVzet264f",
-	"sellerFee" : 3000,
-	"updateAuthority" : "5naz6yeUatB3QmYApqxM1qGKDHLuxrMzVcHto1gyyxkk",
-	"poolWallet1" : "ESbm5twosKASpZSAKYJVqpPsAKP2obmscBt1CgNn82BU",
-	"poolWallet2" : "CzCCZkzxGRaic54jmaMezmLxSudyQPTfRKvkVzet264f",
-	"percent1" : 40,
-	"percent2" : 60,
+	"symbol" : "Doge",
+	"creator" : "HNHW1hTELFegJQG9hxMWm8Uf6LWgeaNZTa5Sdy8g2wce",
+	"sellerFee" : 500,
+	"updateAuthority" : "HNHW1hTELFegJQG9hxMWm8Uf6LWgeaNZTa5Sdy8g2wce",
+	"poolWallet1" : "2cEQDvQQK8d92xKSDGU6G2EiF3d1ueDsCYUqBdpvCbiE",
+	"poolWallet2" : "9wXgK54jaW6jMWHTa54YeQ6YTA4BtJGHvVW7tAckC6qM",
+	"poolPercent1" : 40,
+	"poolPercent2" : 60,
 	"mintingPrice" : 0.6
 }

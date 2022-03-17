@@ -35,7 +35,7 @@
         {
           "name": "authority",
           "isMut": true,
-          "isSigner": true
+          "isSigner": false
         },
         {
           "name": "config",
@@ -73,6 +73,33 @@
             "vec": {
               "defined": "ConfigLine"
             }
+          }
+        }
+      ]
+    },
+    {
+      "name": "updateConfigLine",
+      "accounts": [
+        {
+          "name": "authority",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "config",
+          "isMut": true,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "index",
+          "type": "u32"
+        },
+        {
+          "name": "configLine",
+          "type": {
+            "defined": "ConfigLine"
           }
         }
       ]
@@ -116,24 +143,24 @@
           "type": "publicKey"
         },
         {
-          "name": "poolWallet",
+          "name": "poolWallet1",
           "type": "publicKey"
+        },
+        {
+          "name": "poolWallet2",
+          "type": "publicKey"
+        },
+        {
+          "name": "poolPercent1",
+          "type": "u8"
+        },
+        {
+          "name": "poolPercent2",
+          "type": "u8"
         },
         {
           "name": "mintingPrice",
           "type": "u64"
-        },
-        {
-          "name": "royaltyForMinting",
-          "type": {
-            "defined": "Royalty"
-          }
-        },
-        {
-          "name": "royaltyForTrading",
-          "type": {
-            "defined": "Royalty"
-          }
         }
       ]
     },
@@ -157,100 +184,16 @@
           "type": "publicKey"
         },
         {
-          "name": "poolWallet",
+          "name": "poolWallet1",
+          "type": "publicKey"
+        },
+        {
+          "name": "poolWallet2",
           "type": "publicKey"
         },
         {
           "name": "mintingPrice",
           "type": "u64"
-        },
-        {
-          "name": "royaltyForMinting",
-          "type": {
-            "defined": "Royalty"
-          }
-        },
-        {
-          "name": "royaltyForTrading",
-          "type": {
-            "defined": "Royalty"
-          }
-        }
-      ]
-    },
-    {
-      "name": "mintRoot",
-      "accounts": [
-        {
-          "name": "owner",
-          "isMut": true,
-          "isSigner": true
-        },
-        {
-          "name": "pool",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "config",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "nftMint",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "nftAccount",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "metadata",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "masterEdition",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "metadataExtended",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "poolWallet",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "tokenProgram",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "tokenMetadataProgram",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "systemProgram",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "rent",
-          "isMut": false,
-          "isSigner": false
-        }
-      ],
-      "args": [
-        {
-          "name": "bump",
-          "type": "u8"
         }
       ]
     },
@@ -293,52 +236,12 @@
           "isSigner": false
         },
         {
-          "name": "metadataExtended",
+          "name": "poolWallet1",
           "isMut": true,
           "isSigner": false
         },
         {
-          "name": "oldestNftMint",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "oldestNftAccount",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "oldestMetadataExtended",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "parentNftMint",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "parentNftAccount",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "parentNftOwner",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "poolWallet",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "creatorNftAccount",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "creatorWallet",
+          "name": "poolWallet2",
           "isMut": true,
           "isSigner": false
         },
@@ -363,43 +266,10 @@
           "isSigner": false
         }
       ],
-      "args": [
-        {
-          "name": "bump",
-          "type": "u8"
-        }
-      ]
+      "args": []
     }
   ],
   "accounts": [
-    {
-      "name": "MetadataExtended",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "mint",
-            "type": "publicKey"
-          },
-          {
-            "name": "parent",
-            "type": "publicKey"
-          },
-          {
-            "name": "childrenCount",
-            "type": "u32"
-          },
-          {
-            "name": "number",
-            "type": "u32"
-          },
-          {
-            "name": "bump",
-            "type": "u8"
-          }
-        ]
-      }
-    },
     {
       "name": "Pool",
       "type": {
@@ -430,24 +300,20 @@
             "type": "publicKey"
           },
           {
-            "name": "rootSpore",
+            "name": "poolWallet1",
             "type": "publicKey"
           },
           {
-            "name": "royaltyForMinting",
-            "type": {
-              "defined": "Royalty"
-            }
-          },
-          {
-            "name": "royaltyForTrading",
-            "type": {
-              "defined": "Royalty"
-            }
-          },
-          {
-            "name": "poolWallet",
+            "name": "poolWallet2",
             "type": "publicKey"
+          },
+          {
+            "name": "poolPercent1",
+            "type": "u8"
+          },
+          {
+            "name": "poolPercent2",
+            "type": "u8"
           },
           {
             "name": "bump",
@@ -488,26 +354,6 @@
     }
   ],
   "types": [
-    {
-      "name": "Royalty",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "pool",
-            "type": "u16"
-          },
-          {
-            "name": "creator",
-            "type": "u16"
-          },
-          {
-            "name": "parent",
-            "type": "u16"
-          }
-        ]
-      }
-    },
     {
       "name": "ConfigData",
       "type": {
@@ -603,38 +449,38 @@
     },
     {
       "code": 6011,
-      "name": "InvalidOldestMetadataExtended",
-      "msg": "Invalid oldest metadata_extended"
-    },
-    {
-      "code": 6012,
       "name": "InvalidParent",
       "msg": "Invalid parent"
     },
     {
-      "code": 6013,
+      "code": 6012,
       "name": "InvalidPoolWallet",
       "msg": "Invalid pool wallet"
     },
     {
-      "code": 6014,
+      "code": 6013,
       "name": "InvalidCreatorWallet",
       "msg": "Invalid creator wallet"
     },
     {
-      "code": 6015,
+      "code": 6014,
       "name": "InvalidCreatingRoot",
       "msg": "Invalid creating root"
     },
     {
-      "code": 6016,
+      "code": 6015,
       "name": "InvalidAuthority",
       "msg": "Invalid authority"
     },
     {
-      "code": 6017,
+      "code": 6016,
       "name": "InvalidOwner",
       "msg": "Invalid owner"
+    },
+    {
+      "code": 6017,
+      "name": "InvalidIndex",
+      "msg": "Invalid index"
     }
   ]
 }

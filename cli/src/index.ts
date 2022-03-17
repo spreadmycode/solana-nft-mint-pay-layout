@@ -39,8 +39,8 @@ const idl = JSON.parse(fs.readFileSync('src/solana_anchor.json','utf8'))
 // const key = 'a498033f45742991a161'
 // const secret = '18f6582c5e2a5177785f8d6cdf3e3629f9a6cb57a27977d8725e2aa6ca3ebd7f'
 
-const key = '2433a90cb72e6fe655e9'
-const secret = '1cb4f26d23fe54d3598a19ed0c9d3b3667dafb6d4f582c05529597cf0236cc2e'
+const key = 'c9edbbf5613bfca91466'
+const secret = 'a5d2fc31884f5ac1bdc1732aaca126bd9a29e1dff6150229f78dcb869dc2fbe7'
 
 const CONFIG_DATA_SIZE = 4 + 10 + 32 + 2;
 const CONFIG_SIZE = 8 + 32 + 4 + CONFIG_DATA_SIZE
@@ -515,8 +515,8 @@ programCommand('init_pool')
         new PublicKey(infoJson.updateAuthority),
         new PublicKey(infoJson.poolWallet1),
         new PublicKey(infoJson.poolWallet2),
-        new anchor.BN(infoJson.percent1),
-        new anchor.BN(infoJson.percent2),
+        new anchor.BN(infoJson.poolPercent1),
+        new anchor.BN(infoJson.poolPercent2),
         new anchor.BN(infoJson.mintingPrice * LAMPORTS_PER_SOL),
         {
           accounts:{
@@ -565,8 +565,8 @@ programCommand('update_pool')
           new PublicKey(infoJson.updateAuthority),
           new PublicKey(infoJson.poolWallet1),
           new PublicKey(infoJson.poolWallet2),
-          new anchor.BN(infoJson.percent1),
-          new anchor.BN(infoJson.percent2),
+          new anchor.BN(infoJson.poolPercent1),
+          new anchor.BN(infoJson.poolPercent2),
           new anchor.BN(infoJson.mintingPrice * LAMPORTS_PER_SOL),
           {
             accounts:{
