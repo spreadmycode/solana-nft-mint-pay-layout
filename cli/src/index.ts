@@ -34,7 +34,7 @@ const { metadata: { Metadata } } = programs
 var FormData = require('form-data');
 const programId = new PublicKey('FcsZNLXrhEbkJ6dTgte4SCH1yWMqr7M3rVdiMkyjTnFG')
 const TOKEN_METADATA_PROGRAM_ID = new PublicKey("metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s")
-const idl=JSON.parse(fs.readFileSync('src/solana_anchor.json','utf8'))
+const idl = JSON.parse(fs.readFileSync('src/solana_anchor.json','utf8'))
 
 // const key = 'a498033f45742991a161'
 // const secret = '18f6582c5e2a5177785f8d6cdf3e3629f9a6cb57a27977d8725e2aa6ca3ebd7f'
@@ -201,7 +201,7 @@ export const pinFileToIPFS = async(filename : any) => {
 };
 
 async function showConfigData(configAccount : PublicKey, conn : Connection){
-  try{
+  try {
     console.log("**    Config   **")
     const wallet = new anchor.Wallet(Keypair.generate())
     const provider = new anchor.Provider(conn,wallet,confirmOption)
@@ -212,10 +212,6 @@ async function showConfigData(configAccount : PublicKey, conn : Connection){
     console.log("Symbol : ", config.configData.symbol)
     console.log("Creator : ", config.configData.creator.toBase58())
     console.log("Seller Fee : ", config.configData.sellerFee)
-    console.log("Config Lines : ");
-    // (config.configLines as any[]).map((item,idx) => {
-    //   console.log("no : ",idx," name : ",item.name.replace('\0',''),"   uri : ",item.uri.replace('\0',''))
-    // })
   } catch(err) {
     console.log(err)
   }
@@ -232,12 +228,11 @@ async function showPoolData(poolAccount : PublicKey, conn : Connection){
     console.log("Config : ", pool.config.toBase58())
     console.log("Minting Count : ", pool.countMinting)
     console.log("Minting Price : ", pool.mintingPrice / LAMPORTS_PER_SOL)
-    console.log("Pool wallet : ", pool.poolWallet.toBase58())
-    if(pool.countMinting!=0)
-      console.log("SPORE1 Mint : ", pool.rootSpore.toBase58())
+    console.log("Pool wallet1 : ", pool.poolWallet1.toBase58())
+    console.log("Pool wallet2 : ", pool.poolWallet2.toBase58())
+    console.log("Pool percent1 : ", pool.poolPercent1)
+    console.log("Pool percent2 : ", pool.poolPercent2)
     console.log("Update authority : ", pool.updateAuthority.toBase58())
-    console.log("Royalty for minting : ", pool.royaltyForMinting)
-    console.log("Royalty for trading : ", pool.royaltyForTrading)
     console.log("")
   }catch(err){
     console.log(err)
@@ -273,16 +268,21 @@ programCommand('init_config')
         programId : programId,
         space : space
       }))
-      transaction.add(program.instruction.initConfig(new anchor.BN(infoJson.maxNumberOfLines),{
-          symbol : infoJson.symbol,
-          creator : new PublicKey(infoJson.creator),
-          sellerFee : infoJson.sellerFee
-        },{
-        accounts : {
-          authority : owner.publicKey,
-          config : configKeypair.publicKey,
-        }
-      }))
+      transaction.add(program.instruction.initConfig(
+          new anchor.BN(infoJson.maxNumberOfLines),
+          {
+            symbol : infoJson.symbol,
+            creator : new PublicKey(infoJson.creator),
+            sellerFee : infoJson.sellerFee
+          },
+          {
+            accounts : {
+              authority : owner.publicKey,
+              config : configKeypair.publicKey,
+            }
+          }
+        )
+      )
       const tx = await sendAndConfirmTransaction(conn, transaction, [owner, configKeypair], confirmOption)
       console.log("config address : ", configKeypair.publicKey.toBase58())
       console.log("transaction : ",tx)
@@ -513,10 +513,12 @@ programCommand('init_pool')
       transaction.add(program.instruction.initPool(
         new anchor.BN(bump),
         new PublicKey(infoJson.updateAuthority),
-        new PublicKey(infoJson.poolWallet),
+        new PublicKey(infoJson.poolWallet1),
+        new PublicKey(infoJson.poolWallet2),
+        new anchor.BN(infoJson.percent1),
+        new anchor.BN(infoJson.percent2),
         new anchor.BN(infoJson.mintingPrice * LAMPORTS_PER_SOL),
-        infoJson.royaltyForMinting,
-        infoJson.royaltyForTrading,{
+        {
           accounts:{
             owner : owner.publicKey,
             pool : pool,
@@ -561,16 +563,19 @@ programCommand('update_pool')
       let transaction = new Transaction()
       transaction.add(program.instruction.updatePool(
           new PublicKey(infoJson.updateAuthority),
-          new PublicKey(infoJson.poolWallet),
+          new PublicKey(infoJson.poolWallet1),
+          new PublicKey(infoJson.poolWallet2),
+          new anchor.BN(infoJson.percent1),
+          new anchor.BN(infoJson.percent2),
           new anchor.BN(infoJson.mintingPrice * LAMPORTS_PER_SOL),
-          infoJson.royaltyForMinting,
-          infoJson.royaltyForTrading,{
-          accounts:{
-            owner : owner.publicKey,
-            pool : poolPublicKey,
+          {
+            accounts:{
+              owner : owner.publicKey,
+              pool : poolPublicKey,
+            }
           }
-        }
-      ))
+        )
+      )
       const tx = await sendAndConfirmTransaction(conn, transaction, [owner], confirmOption)
       console.log("transaction : ",tx)
       await showPoolData(poolPublicKey, conn)
@@ -590,62 +595,6 @@ programCommand("get_pool")
     const conn = new Connection(clusterApiUrl(env))
     const poolAccount = new PublicKey(pool)
     await showPoolData(poolAccount, conn)
-  })
-
-programCommand("get_nfts_for_owner")
-  .requiredOption(
-    '-o, --owner <string>',
-    'owner pubkey'
-  )
-  .requiredOption(
-    '-p, --pool <string>',
-    'pool account'
-  )
-  .action(async (directory,cmd)=>{
-    const {env, owner, pool} = cmd.opts()
-    const conn = new Connection(clusterApiUrl(env))
-    const ownerAccount = new PublicKey(owner)
-    const poolAccount = new PublicKey(pool)
-    let allTokens : any[] = []
-    const tokenAccounts = await conn.getParsedTokenAccountsByOwner(ownerAccount, {programId: TOKEN_PROGRAM_ID},"finalized");
-    const randWallet = new anchor.Wallet(Keypair.generate())
-    const provider = new anchor.Provider(conn,randWallet,confirmOption)
-    const program = new anchor.Program(idl,programId,provider)
-    const poolData = await program.account.pool.fetch(poolAccount)
-    const configData = await program.account.config.fetch(poolData.config)
-    const symbol = configData.configData.symbol.replace('\0','')
-    for (let index = 0; index < tokenAccounts.value.length; index++) {
-      try{
-        const tokenAccount = tokenAccounts.value[index];
-        const tokenAmount = tokenAccount.account.data.parsed.info.tokenAmount;
-
-        if (tokenAmount.amount == "1" && tokenAmount.decimals == "0") {
-          let nftMint = new PublicKey(tokenAccount.account.data.parsed.info.mint)
-          let pda = await getMetadata(nftMint)
-          const accountInfo: any = await conn.getParsedAccountInfo(pda);
-          let metadata : any = new Metadata(owner.toString(), accountInfo.value)
-          if (metadata.data.data.symbol == "SPORE") {
-            let [metadataExtended, bump] = await PublicKey.findProgramAddress([nftMint.toBuffer(), poolAccount.toBuffer()],programId)
-            if((await conn.getAccountInfo(metadataExtended)) == null) continue;
-            let extendedData = await program.account.metadataExtended.fetch(metadataExtended) 
-            const { data }: any = await axios.get(metadata.data.data.uri)
-            allTokens.push({
-              mint : nftMint, extendedData : extendedData})
-          }
-        }
-      } catch(err) {
-        continue;
-      }
-    }
-    allTokens.sort(function(a:any, b: any){
-      if(a.extendedData.number < b.extendedData.number) {return -1;}
-      if(a.extendedData.number > b.extendedData.number) {return 1;}
-      return 0;
-    })
-    allTokens.map(item=>{
-      console.log("mint : ",item.mint.toBase58(),"  =>  parent : ",item.extendedData.parent.toBase58(),"  id:  ",item.extendedData.number, "  followers cound : ",item.extendedData.childrenCount)
-    })
-    console.log("")    
   })
 
 function programCommand(name: string) {

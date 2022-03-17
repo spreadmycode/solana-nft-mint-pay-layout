@@ -2,7 +2,6 @@ pub mod utils;
 use borsh::{BorshDeserialize,BorshSerialize};
 use arrayref::{array_ref};
 use {
-    // crate::utils::*,
     anchor_lang::{
         prelude::*,
         AnchorDeserialize,
@@ -14,7 +13,7 @@ use {
             program_pack::Pack,
             system_instruction,
             system_program
-        }      
+        }
     },
     metaplex_token_metadata::{
         instruction::{create_metadata_accounts,create_master_edition,update_metadata_accounts},
@@ -49,7 +48,6 @@ pub mod solana_anchor {
         let new_symbol = config_data.symbol.clone() + std::str::from_utf8(&array_of_zeroes).unwrap();
         config_data.symbol = new_symbol;
         new_data.append(&mut config_data.try_to_vec().unwrap());
-        // new_data.append(&mut config_data.symbol.try_to_vec().unwrap());
         let mut data = config_info.data.borrow_mut();
         for i in 0..new_data.len(){
             data[i] = new_data[i];
@@ -162,10 +160,11 @@ pub mod solana_anchor {
         ctx : Context<InitPool>,
         _bump : u8,
         _update_authority : Pubkey,
-        _pool_wallet : Pubkey,
-        _minting_price : u64,
-        _royalty_for_minting : Royalty,
-        _royalty_for_trading : Royalty,
+        _pool_wallet1 : Pubkey,
+        _pool_wallet2 : Pubkey,
+        _pool_percent1 : u8,
+        _pool_percent2 : u8,
+        _minting_price : u64
         ) ->ProgramResult {
         msg!("+ init_pool");
         let pool = &mut ctx.accounts.pool;
@@ -175,9 +174,10 @@ pub mod solana_anchor {
         pool.count_minting = 0;
         pool.minting_price = _minting_price;
         pool.update_authority = _update_authority;
-        pool.royalty_for_minting = _royalty_for_minting;
-        pool.royalty_for_trading = _royalty_for_trading;
-        pool.pool_wallet = _pool_wallet;
+        pool.pool_wallet1 = _pool_wallet1;
+        pool.pool_wallet2 = _pool_wallet2;
+        pool.pool_percent1 = _pool_percent1;
+        pool.pool_percent2 = _pool_percent2;
         pool.bump = _bump;
         Ok(())
     }
@@ -185,10 +185,9 @@ pub mod solana_anchor {
     pub fn update_pool(
         ctx : Context<UpdatePool>,
         _update_authority : Pubkey,
-        _pool_wallet : Pubkey,
-        _minting_price : u64,
-        _royalty_for_minting : Royalty,
-        _royalty_for_trading : Royalty,
+        _pool_wallet1 : Pubkey,
+        _pool_wallet2 : Pubkey,
+        _minting_price : u64
         ) -> ProgramResult {
         msg!("+ update_pool");
         let pool = &mut ctx.accounts.pool;
@@ -198,31 +197,24 @@ pub mod solana_anchor {
         }
         pool.update_authority = _update_authority;
         pool.minting_price = _minting_price;
-        pool.royalty_for_minting = _royalty_for_minting;
-        pool.royalty_for_trading = _royalty_for_trading;
-        pool.pool_wallet = _pool_wallet;
+        pool.pool_wallet1 = _pool_wallet1;
+        pool.pool_wallet2 = _pool_wallet2;
         Ok(())
     }
 
-    pub fn mint_root(
-        ctx : Context<MintRoot>,
-        _bump : u8,
+    pub fn mint(
+        ctx : Context<Mint>,
         ) ->ProgramResult {
         msg!("+ mint_root");
         let pool = &mut ctx.accounts.pool;
-        // let config = &ctx.accounts.config;
 
         let config_data = get_config_data(&ctx.accounts.config)?;
 
-        if config_data.creator != *ctx.accounts.owner.key {
-            return Err(PoolError::InvalidOwner.into());
-        }
         if pool.count_minting != 0 {
             return Err(PoolError::InvalidCreatingRoot.into());
         }
         let nft_mint : state::Mint = state::Mint::unpack_from_slice(&ctx.accounts.nft_mint.data.borrow())?;
         let nft_account : state::Account = state::Account::unpack_from_slice(&ctx.accounts.nft_account.data.borrow())?;
-        let metadata_extended = &mut ctx.accounts.metadata_extended;
         if nft_mint.supply !=1 
             || nft_account.owner != *ctx.accounts.owner.key 
             || nft_account.amount != 1 
@@ -233,16 +225,28 @@ pub mod solana_anchor {
         if ctx.accounts.owner.lamports() < pool.minting_price {
             return Err(PoolError::NotEnoughSol.into());
         }
-        if *ctx.accounts.owner.key != *ctx.accounts.pool_wallet.key {
+        if *ctx.accounts.owner.key != *ctx.accounts.pool_wallet1.key {
             invoke(
                 &system_instruction::transfer(
                     ctx.accounts.owner.key,
-                    ctx.accounts.pool_wallet.key,
-                    pool.minting_price * pool.royalty_for_minting.pool as u64 / 10000
+                    ctx.accounts.pool_wallet1.key,
+                    pool.minting_price * pool.pool_percent1 as u64 / 100 as u64
                 ),
                 &[
                     ctx.accounts.owner.clone(),
-                    ctx.accounts.pool_wallet.clone(),
+                    ctx.accounts.pool_wallet1.clone(),
+                    ctx.accounts.system_program.clone(),
+                ]
+            )?;
+            invoke(
+                &system_instruction::transfer(
+                    ctx.accounts.owner.key,
+                    ctx.accounts.pool_wallet2.key,
+                    pool.minting_price * pool.pool_percent2 as u64 / 100 as u64
+                ),
+                &[
+                    ctx.accounts.owner.clone(),
+                    ctx.accounts.pool_wallet2.clone(),
                     ctx.accounts.system_program.clone(),
                 ]
             )?;
@@ -253,24 +257,17 @@ pub mod solana_anchor {
                 verified : true,
                 share : 0,
             }];
-        if *ctx.accounts.pool_wallet.key != *ctx.accounts.owner.key {
-            creators.push(metaplex_token_metadata::state::Creator{
-                address : *ctx.accounts.pool_wallet.key,
-                verified : false,
-                share : pool.royalty_for_trading.pool as u8,
-            });
-            creators.push(metaplex_token_metadata::state::Creator{
-                address : *ctx.accounts.owner.key,
-                verified : false,
-                share : (pool.royalty_for_trading.creator+pool.royalty_for_trading.parent) as u8,
-            });
-        } else {
-            creators.push(metaplex_token_metadata::state::Creator{
-                address : *ctx.accounts.pool_wallet.key,
-                verified : false,
-                share : 100,
-            });
-        }
+        creators.push(metaplex_token_metadata::state::Creator{
+            address : *ctx.accounts.pool_wallet1.key,
+            verified : false,
+            share : pool.pool_percent1,
+        });
+        creators.push(metaplex_token_metadata::state::Creator{
+            address : *ctx.accounts.pool_wallet2.key,
+            verified : false,
+            share : pool.pool_percent2,
+        });
+
         let pool_seeds = &[pool.rand.as_ref(),&[pool.bump]];  
         invoke_signed(
             &create_metadata_accounts(
@@ -340,232 +337,6 @@ pub mod solana_anchor {
             ],
             &[pool_seeds]
         )?;
-        metadata_extended.mint = *ctx.accounts.nft_mint.key;
-        metadata_extended.parent = *ctx.accounts.nft_mint.key;
-        metadata_extended.children_count = 0;
-        metadata_extended.number = pool.count_minting;
-        metadata_extended.bump = _bump;
-        pool.count_minting = pool.count_minting + 1;
-        pool.root_spore = *ctx.accounts.nft_mint.key;
-        Ok(())
-    }
-
-    pub fn mint(
-        ctx : Context<Mint>,
-        _bump : u8,
-        ) -> ProgramResult {
-        msg!("+ mint");
-        let pool = &mut ctx.accounts.pool;
-        let config_data = get_config_data(&ctx.accounts.config)?;
-        if pool.count_minting == 0 {
-            return Err(PoolError::InvalidCreatingRoot.into());
-        }
-        let config_line = get_config_line(&ctx.accounts.config, pool.count_minting as usize)?;
-        let nft_mint : state::Mint = state::Mint::unpack_from_slice(&ctx.accounts.nft_mint.data.borrow())?;
-        let nft_account : state::Account = state::Account::unpack_from_slice(&ctx.accounts.nft_account.data.borrow())?;
-        let metadata_extended = &mut ctx.accounts.metadata_extended;
-        // let oldest_nft_mint : state::Mint = state::Mint::unpack_from_slice(&ctx.accounts.oldest_nft_mint.data.borrow())?;
-        let oldest_nft_account : state::Account = state::Account::unpack_from_slice(&ctx.accounts.oldest_nft_account.data.borrow())?;
-        let oldest_metadata_extended = &mut ctx.accounts.oldest_metadata_extended;
-        // let parent_nft_mint : state::Mint = state::Mint::unpack_from_slice(&ctx.accounts.parent_nft_mint.data.borrow())?;
-        let parent_nft_account : state::Account = state::Account::unpack_from_slice(&ctx.accounts.parent_nft_account.data.borrow())?;
-        let creator_nft_account : state::Account = state::Account::unpack_from_slice(&ctx.accounts.creator_nft_account.data.borrow())?;
-        if nft_mint.supply !=1 
-            || nft_account.owner != *ctx.accounts.owner.key 
-            || nft_account.amount != 1 
-            || nft_account.mint != *ctx.accounts.nft_mint.key {
-            return Err(PoolError::InvalidMintPrerequirement.into());
-        }
-        if oldest_nft_account.mint != *ctx.accounts.oldest_nft_mint.key 
-            || oldest_nft_account.owner != *ctx.accounts.owner.key
-            || oldest_nft_account.amount != 1 {
-            return Err(PoolError::InvalidOldestMintRequirement.into());
-        }
-        if oldest_metadata_extended.mint != *ctx.accounts.oldest_nft_mint.key 
-            || oldest_metadata_extended.parent != *ctx.accounts.parent_nft_mint.key
-            {
-            return Err(PoolError::InvalidOldestMetadataExtended.into());
-        }
-        if parent_nft_account.mint != *ctx.accounts.parent_nft_mint.key
-            || parent_nft_account.owner != *ctx.accounts.parent_nft_owner.key
-            || parent_nft_account.amount != 1 {
-            return Err(PoolError::InvalidParent.into());
-        }
-        if creator_nft_account.mint != pool.root_spore
-            || creator_nft_account.amount != 1
-            || creator_nft_account.owner != *ctx.accounts.creator_wallet.key {
-            return Err(PoolError::InvalidCreatorWallet.into());
-        }
-
-        if ctx.accounts.owner.lamports() < pool.minting_price {
-            return Err(PoolError::NotEnoughSol.into());
-        }
-        if pool.pool_wallet != *ctx.accounts.pool_wallet.key {
-            return Err(PoolError::InvalidPoolWallet.into());
-        }
-        if *ctx.accounts.owner.key != *ctx.accounts.pool_wallet.key {
-            invoke(
-                &system_instruction::transfer(
-                    ctx.accounts.owner.key,
-                    ctx.accounts.pool_wallet.key,
-                    pool.minting_price * pool.royalty_for_minting.pool as u64 / 10000
-                ),
-                &[
-                    ctx.accounts.owner.clone(),
-                    ctx.accounts.pool_wallet.clone(),
-                    ctx.accounts.system_program.clone(),
-                ]
-            )?;
-        }
-        if ctx.accounts.owner.key != ctx.accounts.creator_wallet.key {
-            invoke(
-                &system_instruction::transfer(
-                    ctx.accounts.owner.key,
-                    ctx.accounts.creator_wallet.key,
-                    pool.minting_price * pool.royalty_for_minting.creator as u64 / 10000
-                ),
-                &[
-                    ctx.accounts.owner.clone(),
-                    ctx.accounts.creator_wallet.clone(),
-                    ctx.accounts.system_program.clone(),
-                ]
-            )?;
-        }
-        if ctx.accounts.owner.key != ctx.accounts.parent_nft_owner.key {
-            invoke(
-                &system_instruction::transfer(
-                    ctx.accounts.owner.key,
-                    ctx.accounts.parent_nft_owner.key,
-                    pool.minting_price * pool.royalty_for_minting.parent as u64 / 10000
-                ),
-                &[
-                    ctx.accounts.owner.clone(),
-                    ctx.accounts.parent_nft_owner.clone(),
-                    ctx.accounts.system_program.clone(),
-                ]
-            )?;
-        }
-        let mut creators : Vec<metaplex_token_metadata::state::Creator> = 
-            vec![metaplex_token_metadata::state::Creator{
-                address : pool.key(),
-                verified : true,
-                share : 0,
-            }];
-
-        let mut royalty_pool = pool.royalty_for_trading.pool as u8;
-        let mut royalty_creator = pool.royalty_for_trading.creator as u8;
-        let mut royalty_parent = pool.royalty_for_trading.parent as u8;
-
-        if *ctx.accounts.pool_wallet.key ==  *ctx.accounts.creator_wallet.key {
-            royalty_pool += royalty_creator;
-            royalty_creator = 0;
-        }
-
-        if *ctx.accounts.pool_wallet.key == *ctx.accounts.parent_nft_owner.key {
-            royalty_pool += royalty_parent;
-            royalty_parent = 0;
-        }
-
-        if *ctx.accounts.creator_wallet.key == *ctx.accounts.parent_nft_owner.key {
-            royalty_creator += royalty_parent;
-            royalty_parent = 0;
-        }
-        if royalty_pool != 0{
-            creators.push(metaplex_token_metadata::state::Creator{
-                address : *ctx.accounts.pool_wallet.key,
-                verified : false,
-                share : royalty_pool,
-            });
-        }
-        if royalty_creator != 0{
-            creators.push(metaplex_token_metadata::state::Creator{
-                address : *ctx.accounts.creator_wallet.key,
-                verified : false,
-                share : royalty_creator,
-            });
-        }
-        if royalty_parent != 0{
-            creators.push(metaplex_token_metadata::state::Creator{
-                address : *ctx.accounts.parent_nft_owner.key,
-                verified : false,
-                share : royalty_parent as u8,
-            });
-        }
-        let pool_seeds = &[pool.rand.as_ref(),&[pool.bump]];
-        invoke_signed(
-            &create_metadata_accounts(
-                *ctx.accounts.token_metadata_program.key,
-                *ctx.accounts.metadata.key,
-                *ctx.accounts.nft_mint.key,
-                *ctx.accounts.owner.key,
-                *ctx.accounts.owner.key,
-                pool.key(),
-                config_line.name,
-                config_data.symbol.clone(),
-                config_line.uri,
-                Some(creators),
-                config_data.seller_fee,
-                true,
-                true,
-            ),
-            &[
-                ctx.accounts.metadata.clone(),
-                ctx.accounts.nft_mint.clone(),
-                ctx.accounts.owner.clone(),
-                ctx.accounts.token_metadata_program.clone(),
-                ctx.accounts.token_program.clone(),
-                ctx.accounts.system_program.clone(),
-                ctx.accounts.rent.to_account_info().clone(),
-                pool.to_account_info().clone(),
-            ],
-            &[pool_seeds],
-        )?;
-        invoke_signed(
-            &create_master_edition(
-                *ctx.accounts.token_metadata_program.key,
-                *ctx.accounts.master_edition.key,
-                *ctx.accounts.nft_mint.key,
-                pool.key(),
-                *ctx.accounts.owner.key,
-                *ctx.accounts.metadata.key,
-                *ctx.accounts.owner.key,
-                None
-            ),
-            &[
-                ctx.accounts.master_edition.clone(),
-                ctx.accounts.nft_mint.clone(),
-                ctx.accounts.owner.clone(),
-                ctx.accounts.metadata.clone(),
-                ctx.accounts.token_metadata_program.clone(),
-                ctx.accounts.token_program.clone(),
-                ctx.accounts.system_program.clone(),
-                ctx.accounts.rent.to_account_info().clone(),
-                pool.to_account_info().clone(),
-            ],
-            &[pool_seeds]
-        )?;
-        invoke_signed(
-            &update_metadata_accounts(
-                *ctx.accounts.token_metadata_program.key,
-                *ctx.accounts.metadata.key,
-                pool.key(),
-                Some(pool.update_authority),
-                None,
-                Some(true),
-            ),
-            &[
-                ctx.accounts.token_metadata_program.clone(),
-                ctx.accounts.metadata.clone(),
-                pool.to_account_info().clone(),
-            ],
-            &[pool_seeds]
-        )?;
-        metadata_extended.mint = *ctx.accounts.nft_mint.key;
-        metadata_extended.parent = *ctx.accounts.oldest_nft_mint.key;
-        metadata_extended.children_count = 0;
-        metadata_extended.number = pool.count_minting;
-        metadata_extended.bump = _bump;
-        oldest_metadata_extended.children_count = oldest_metadata_extended.children_count + 1;
         pool.count_minting = pool.count_minting + 1;
         Ok(())
     }
@@ -612,74 +383,11 @@ pub struct Mint<'info>{
     #[account(mut)]
     master_edition : AccountInfo<'info>,
 
-    #[account(init, seeds=[(*nft_mint.key).as_ref(), pool.key().as_ref()], bump=_bump, payer=owner, space=8+METADATA_EXTENDED_SIZE)]
-    metadata_extended : ProgramAccount<'info, MetadataExtended>,
+    #[account(mut)]
+    pool_wallet1 : AccountInfo<'info>,
 
     #[account(mut)]
-    oldest_nft_mint : AccountInfo<'info>,
-
-    #[account(mut)]
-    oldest_nft_account : AccountInfo<'info>,
-
-    #[account(mut, seeds=[(*oldest_nft_mint.key).as_ref(), pool.key().as_ref()], bump=oldest_metadata_extended.bump)]
-    oldest_metadata_extended : ProgramAccount<'info, MetadataExtended>,
-
-    parent_nft_mint : AccountInfo<'info>,
-
-    parent_nft_account : AccountInfo<'info>,
-
-    #[account(mut)]
-    parent_nft_owner : AccountInfo<'info>,
-
-    #[account(mut)]
-    pool_wallet : AccountInfo<'info>,
-
-    creator_nft_account : AccountInfo<'info>,
-
-    #[account(mut)]
-    creator_wallet : AccountInfo<'info>,
-
-    #[account(address = spl_token::id())]
-    token_program: AccountInfo<'info>,
-
-    #[account(address = metaplex_token_metadata::id())]
-    token_metadata_program: AccountInfo<'info>,
-
-    // system_program : Program<'info,System>,  
-    #[account(address = system_program::ID)]
-    system_program : AccountInfo<'info>,
-
-    rent: Sysvar<'info, Rent>,
-}
-
-#[derive(Accounts)]
-#[instruction(_bump : u8)]
-pub struct MintRoot<'info>{
-    #[account(mut, signer)]
-    owner : AccountInfo<'info>,
-
-    #[account(mut)]
-    pool : ProgramAccount<'info, Pool>,
-
-    config : AccountInfo<'info>,
-
-    #[account(mut)]
-    nft_mint : AccountInfo<'info>,
-
-    #[account(mut)]
-    nft_account : AccountInfo<'info>,
-
-    #[account(mut)]
-    metadata : AccountInfo<'info>,
-
-    #[account(mut)]
-    master_edition : AccountInfo<'info>,
-
-    #[account(init, seeds=[(*nft_mint.key).as_ref(), pool.key().as_ref()], bump=_bump, payer=owner, space=8+METADATA_EXTENDED_SIZE)]
-    metadata_extended : ProgramAccount<'info, MetadataExtended>,
-
-    #[account(mut)]
-    pool_wallet : AccountInfo<'info>,
+    pool_wallet2 : AccountInfo<'info>,
 
     #[account(address = spl_token::id())]
     token_program: AccountInfo<'info>,
@@ -741,7 +449,7 @@ pub struct MetadataExtended{
     pub bump : u8,
 }
 
-pub const POOL_SIZE : usize = 32 + 32 + 32 + 4 + 8 + 32 + 32 + ROYALTY_SIZE + ROYALTY_SIZE + 32 + 1;
+pub const POOL_SIZE : usize = 32 + 32 + 32 + 4 + 8 + 32 + 32 + 32 + 1 + 1 + 1;
 #[account]
 #[derive(Default)]
 pub struct Pool{
@@ -751,19 +459,11 @@ pub struct Pool{
     pub count_minting : u32,
     pub minting_price : u64,
     pub update_authority : Pubkey,
-    pub root_spore : Pubkey,
-    pub royalty_for_minting : Royalty,
-    pub royalty_for_trading : Royalty,
-    pub pool_wallet : Pubkey,
+    pub pool_wallet1 : Pubkey,
+    pub pool_wallet2 : Pubkey,
+    pub pool_percent1 : u8,
+    pub pool_percent2 : u8,
     pub bump : u8
-}
-
-pub const ROYALTY_SIZE : usize = 2 + 2 + 2;
-#[derive(AnchorSerialize, AnchorDeserialize, Clone, Default)]
-pub struct Royalty{
-    pub pool : u16,
-    pub creator : u16,
-    pub parent : u16,
 }
 
 pub const CONFIG_SIZE : usize = 32 + 4 + CONFIG_DATA_SIZE; // + 4 + CONFIG_LINE_SIZE * max_number_of_lines

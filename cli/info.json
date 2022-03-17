@@ -1,19 +1,12 @@
 {
 	"maxNumberOfLines" : 10,
-	"symbol" : "SPORE",
+	"symbol" : "TestPayout",
 	"creator" : "CzCCZkzxGRaic54jmaMezmLxSudyQPTfRKvkVzet264f",
 	"sellerFee" : 3000,
 	"updateAuthority" : "5naz6yeUatB3QmYApqxM1qGKDHLuxrMzVcHto1gyyxkk",
-	"poolWallet" : "ESbm5twosKASpZSAKYJVqpPsAKP2obmscBt1CgNn82BU",
-	"mintingPrice" : 0.6,
-	"royaltyForMinting" : {
-		"pool" : 350,
-		"creator" : 1930,
-		"parent" : 7720
-	},
-	"royaltyForTrading" : {
-		"pool" : 4,
-		"creator" : 77,
-		"parent" : 19
-	}
+	"poolWallet1" : "ESbm5twosKASpZSAKYJVqpPsAKP2obmscBt1CgNn82BU",
+	"poolWallet2" : "CzCCZkzxGRaic54jmaMezmLxSudyQPTfRKvkVzet264f",
+	"percent1" : 40,
+	"percent2" : 60,
+	"mintingPrice" : 0.6
 }
