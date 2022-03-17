@@ -36,9 +36,6 @@ const programId = new PublicKey('3ToAQ1RCxtCCVPj3BGFS2HSm3Hi4xMJWowycHAAsAMgJ')
 const TOKEN_METADATA_PROGRAM_ID = new PublicKey("metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s")
 const idl = JSON.parse(fs.readFileSync('src/solana_anchor.json','utf8'))
 
-// const key = 'a498033f45742991a161'
-// const secret = '18f6582c5e2a5177785f8d6cdf3e3629f9a6cb57a27977d8725e2aa6ca3ebd7f'
-
 const key = 'c9edbbf5613bfca91466'
 const secret = 'a5d2fc31884f5ac1bdc1732aaca126bd9a29e1dff6150229f78dcb869dc2fbe7'
 

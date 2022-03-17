@@ -4,9 +4,9 @@
 	"creator" : "HNHW1hTELFegJQG9hxMWm8Uf6LWgeaNZTa5Sdy8g2wce",
 	"sellerFee" : 500,
 	"updateAuthority" : "HNHW1hTELFegJQG9hxMWm8Uf6LWgeaNZTa5Sdy8g2wce",
-	"poolWallet1" : "2cEQDvQQK8d92xKSDGU6G2EiF3d1ueDsCYUqBdpvCbiE",
-	"poolWallet2" : "9wXgK54jaW6jMWHTa54YeQ6YTA4BtJGHvVW7tAckC6qM",
-	"poolPercent1" : 40,
-	"poolPercent2" : 60,
-	"mintingPrice" : 0.6
+	"poolWallet1" : "6wVvF8Pjg7JMLQZbv6BVMH8ixhJP7MAjaJzJkRzXXfrM",
+	"poolWallet2" : "FPK9WWj4CHsMwpSUvHRhM6A3PK1ot9invr4CmUnEEq4p",
+	"poolPercent1" : 60,
+	"poolPercent2" : 40,
+	"mintingPrice" : 0.8
 }

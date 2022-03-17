@@ -187,6 +187,8 @@ pub mod solana_anchor {
         _update_authority : Pubkey,
         _pool_wallet1 : Pubkey,
         _pool_wallet2 : Pubkey,
+        _pool_percent1 : u8,
+        _pool_percent2 : u8,
         _minting_price : u64
         ) -> ProgramResult {
         msg!("+ update_pool");
@@ -199,6 +201,8 @@ pub mod solana_anchor {
         pool.minting_price = _minting_price;
         pool.pool_wallet1 = _pool_wallet1;
         pool.pool_wallet2 = _pool_wallet2;
+        pool.pool_percent1 = _pool_percent1;
+        pool.pool_percent2 = _pool_percent2;
         Ok(())
     }
 
@@ -225,7 +229,7 @@ pub mod solana_anchor {
         if ctx.accounts.owner.lamports() < pool.minting_price {
             return Err(PoolError::NotEnoughSol.into());
         }
-        if *ctx.accounts.owner.key != *ctx.accounts.pool_wallet1.key {
+        if *ctx.accounts.owner.key != *ctx.accounts.pool_wallet1.key && *ctx.accounts.owner.key != *ctx.accounts.pool_wallet2.key {
             invoke(
                 &system_instruction::transfer(
                     ctx.accounts.owner.key,
