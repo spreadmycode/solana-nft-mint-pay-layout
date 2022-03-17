@@ -60,8 +60,8 @@ const {
 const TOKEN_METADATA_PROGRAM_ID = new anchor.web3.PublicKey(
   "metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s"
 );
-const programId = new PublicKey("6xygZK6rUgtixEFf8CKRzVe2HWxeyWKxGvWBDERYo2Zp");
-const POOL = new PublicKey("CeLVMp9JzL7xoJRZ8eKYUv1Dxe8pQ241qb2GGqLfUWsX");
+const programId = new PublicKey("3ToAQ1RCxtCCVPj3BGFS2HSm3Hi4xMJWowycHAAsAMgJ");
+const POOL = new PublicKey("7FZAG7ZZGsEcbzQyQqiEaddEG4g1tGegXmXuQtjNoh8C");
 const idl = require("./solana_anchor.json");
 const confirmOption: ConfirmOptions = {
   commitment: "finalized",
