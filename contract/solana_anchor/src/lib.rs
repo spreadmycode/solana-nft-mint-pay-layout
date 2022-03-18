@@ -214,9 +214,6 @@ pub mod solana_anchor {
 
         let config_data = get_config_data(&ctx.accounts.config)?;
 
-        if pool.count_minting != 0 {
-            return Err(PoolError::InvalidCreatingRoot.into());
-        }
         let nft_mint : state::Mint = state::Mint::unpack_from_slice(&ctx.accounts.nft_mint.data.borrow())?;
         let nft_account : state::Account = state::Account::unpack_from_slice(&ctx.accounts.nft_account.data.borrow())?;
         if nft_mint.supply !=1 
